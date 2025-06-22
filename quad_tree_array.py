@@ -5,10 +5,10 @@ class QuadTree:
     def __init__(self, x, y, width, height, initial_capacity=4096):
         self.capacity = initial_capacity
 
-        self.x = np.zeros(self.capacity, dtype=np.float32)
-        self.y = np.zeros(self.capacity, dtype=np.float32)
-        self.w = np.zeros(self.capacity, dtype=np.float32)
-        self.h = np.zeros(self.capacity, dtype=np.float32)
+        self.x = np.full(self.capacity, np.nan, dtype=np.float32)
+        self.y = np.full(self.capacity, np.nan, dtype=np.float32)
+        self.w = np.full(self.capacity, np.nan, dtype=np.float32)
+        self.h = np.full(self.capacity, np.nan, dtype=np.float32)
 
         self.px = np.full(self.capacity, np.nan, dtype=np.float32)
         self.py = np.full(self.capacity, np.nan, dtype=np.float32)
@@ -87,10 +87,7 @@ class QuadTree:
         self.y[new_indices] = [y, y, y + half_h, y + half_h]
         self.w[new_indices] = half_w
         self.h[new_indices] = half_h
-        self.px[new_indices] = np.nan
-        self.py[new_indices] = np.nan
         self.is_leaf[new_indices] = True
-        self.children_idx[new_indices] = -1
 
         self.count += 4
 
@@ -101,6 +98,10 @@ class QuadTree:
         self.y.resize(new_capacity, refcheck=False)
         self.w.resize(new_capacity, refcheck=False)
         self.h.resize(new_capacity, refcheck=False)
+        self.x[self.capacity:] = np.nan
+        self.y[self.capacity:] = np.nan
+        self.w[self.capacity:] = np.nan
+        self.h[self.capacity:] = np.nan
         
         self.px.resize(new_capacity, refcheck=False)
         self.py.resize(new_capacity, refcheck=False)
@@ -117,12 +118,28 @@ class QuadTree:
         print(f"QuadTree resized to {self.capacity} nodes.")  # DEBUG
 
     def clear(self):
-        self.count = 1
-        self.is_leaf[0] = True
-        self.children_idx[0] = -1
-        self.px[0] = np.nan
-        self.py[0] = np.nan
+        root_x, root_y = self.x[0], self.y[0]
+        root_w, root_h = self.w[0], self.h[0]
 
+        self.x.fill(np.nan)
+        self.y.fill(np.nan)
+        self.w.fill(np.nan)
+        self.h.fill(np.nan)
+
+        self.px.fill(np.nan)
+        self.py.fill(np.nan)
+
+        self.is_leaf.fill(False)
+        self.children_idx.fill(-1)
+
+        # Reset the root node
+        self.count = 1
+        self.x[0] = root_x
+        self.y[0] = root_y
+        self.w[0] = root_w
+        self.h[0] = root_h
+        self.is_leaf[0] = True
+        
     def __len__(self):
         return self.count
     
