@@ -2,7 +2,7 @@ import numpy as np
 
 
 class QuadTree:
-    def __init__(self, x, y, width, height, initial_capacity=1024):
+    def __init__(self, x, y, width, height, initial_capacity=4096):
         self.capacity = initial_capacity
 
         self.x = np.zeros(self.capacity, dtype=np.float32)
