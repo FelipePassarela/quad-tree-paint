@@ -9,14 +9,14 @@ GRAY = (207, 188, 180)
 RED = (245, 67, 40)
 
 def draw_quadtree(surface, qt):
-    for i in range(len(qt.x)):
+    for i in range(len(qt)):
         x, y = qt.x[i], qt.y[i]
         w, h = qt.w[i], qt.h[i]
         pygame.draw.rect(surface, GRAY, (int(x), int(y), int(w), int(h)), 1)
 
 
 def draw_particles(surface, qt):
-    for i in range(len(qt.px)):
+    for i in range(len(qt)):
         px, py = qt.px[i], qt.py[i]
         is_leaf = qt.is_leaf[i]
         if is_leaf and not np.isnan(px):
