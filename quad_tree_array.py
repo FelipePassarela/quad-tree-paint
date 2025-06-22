@@ -38,8 +38,6 @@ class QuadTree:
 
         for attr, value in self.invalid_values.items():
             array = getattr(self, attr)
-            if attr not in self.__dict__:
-                raise ValueError(f"Initialization error: attribute '{attr}' not found in QuadTree.")
             if not array.dtype == np.dtype(value):
                 raise ValueError(f"Initialization error: dtype mismatch for attribute '{attr}'. Expected {value.dtype}, got {array.dtype}.")
             array.fill(value)
