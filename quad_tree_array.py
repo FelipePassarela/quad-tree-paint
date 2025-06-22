@@ -84,22 +84,26 @@ class QuadTree:
             self._update_cm(current_idx)
         return insert_success
     
-    def compute_forces(self, px, py, mass, g=1.0, theta=0.5):
+    def compute_forces(self, px, py, mass, g=1.0, theta=0.5, eps=1e-6):
         fx, fy = 0.0, 0.0
-        stack = [0]
 
-        while stack:
-            node_idx = stack.pop()
+        max_stack_size = self.capacity
+        stack = np.empty(max_stack_size, dtype=np.int32)
+        stack_size = 1
+        stack[0] = 0  # root
+
+        while stack_size > 0:
+            stack_size -= 1
+            node_idx = stack[stack_size]
 
             if np.isnan(self.cm_x[node_idx]) or self.masses[node_idx] == 0.0:
                 continue
             if self.is_leaf[node_idx] and px == self.px[node_idx] and py == self.py[node_idx]:
-                # Skip the particle itself
                 continue
 
             dx = self.cm_x[node_idx] - px
             dy = self.cm_y[node_idx] - py
-            dist_sq = dx * dx + dy * dy + 1e-1
+            dist_sq = dx * dx + dy * dy + eps
             dist = np.sqrt(dist_sq)
             s = self.w[node_idx]
 
@@ -108,7 +112,11 @@ class QuadTree:
                 fx += force_mag * dx
                 fy += force_mag * dy
             else:
-                stack.extend(child_idx for child_idx in self.children_idx[node_idx] if child_idx != -1)
+                for child_idx in self.children_idx[node_idx]:
+                    if child_idx == -1:
+                        continue
+                    stack[stack_size] = child_idx
+                    stack_size += 1
 
         return np.array([fx, fy], dtype=np.float32)
 
