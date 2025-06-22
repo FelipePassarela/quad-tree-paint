@@ -15,29 +15,32 @@ class QuadTree:
         current_idx = 0  # Root
 
         while True:
-            if not self.nodes[current_idx].is_leaf:
+            current_node = self.nodes[current_idx]
+
+            if not current_node.is_leaf:
                 quadrant_idx = self._find_quadrant(px, py, current_idx)
-                current_idx = self.nodes[current_idx].children_idx[quadrant_idx]
+                current_idx = current_node.children_idx[quadrant_idx]
                 continue
 
-            is_empty = (self.nodes[current_idx].px == None)
+            is_empty = (current_node.px == None)
             if is_empty:
-                self.nodes[current_idx].px = px
-                self.nodes[current_idx].py = py
+                current_node.px = px
+                current_node.py = py
                 break
             else:
                 self._subdivide(current_idx)
 
                 # Insert old particle in properly quadrant
-                old_px = self.nodes[current_idx].px
-                old_py = self.nodes[current_idx].py
-                self.nodes[current_idx].px = None
-                self.nodes[current_idx].py = None
+                old_px = current_node.px
+                old_py = current_node.py
+                current_node.px = None
+                current_node.py = None
 
                 quadrant_idx = self._find_quadrant(old_px, old_py, current_idx)
-                child_idx = self.nodes[current_idx].children_idx[quadrant_idx]
-                self.nodes[child_idx].px = old_px
-                self.nodes[child_idx].py = old_py
+                child_idx = current_node.children_idx[quadrant_idx]
+                child_node = self.nodes[child_idx]
+                child_node.px = old_px
+                child_node.py = old_py
 
     def _find_quadrant(self, px, py, node_idx):
         mid_x = self.nodes[node_idx].x + self.nodes[node_idx].w // 2
