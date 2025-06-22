@@ -23,12 +23,10 @@ def draw_quadtree(surface, qt):
     pygame.draw.line(surface, BLUE, (root_cm[0], root_cm[1] - 4), (root_cm[0], root_cm[1] + 4), 2)
 
 
-def draw_particles(surface, qt):
-    for i in range(len(qt)):
-        px, py = qt.px[i], qt.py[i]
-        is_leaf = qt.is_leaf[i]
-        if is_leaf and not np.isnan(px):
-            pygame.draw.circle(surface, RED, (int(px), int(py)), 3)
+def draw_particles(surface, positions, count):
+    for i in range(count):
+        pos = int(positions[i, 0]), int(positions[i, 1])
+        pygame.draw.circle(surface, RED, pos, 3)
 
 
 def draw_fps(surface, fps):
@@ -55,10 +53,23 @@ def main():
     clock = pygame.time.Clock()
 
     qtree = QuadTree(0, 0, WIDTH, HEIGHT)
+    capacity = 1024
+    particles_pos = np.full((capacity, 2), np.nan, dtype=np.float32)
+    particles_vel = np.zeros((capacity, 2), dtype=np.float32)
+    particles_acc = np.zeros((capacity, 2), dtype=np.float32)
+    particles_mass = np.ones(capacity, dtype=np.float32)
     particles_count = 0
+
+    physics_paused = False
 
     while running:
         clock.tick(120)
+
+        qtree.clear()
+        for i in range(particles_count):
+            px, py = particles_pos[i]
+            mass = particles_mass[i]
+            qtree.insert(px, py, mass)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -67,17 +78,38 @@ def main():
                 if event.key == pygame.K_r:
                     qtree.clear()
                     particles_count = 0
+                    particles_pos.fill(np.nan)
                 if event.key == pygame.K_ESCAPE:
                     running = False
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] or pygame.mouse.get_pressed()[0]:
             px, py = pygame.mouse.get_pos()
-            particles_count += qtree.insert(px, py, 1.0)
+            particles_count += 1
+            particles_pos[particles_count - 1] = px, py
+            if particles_count == capacity:
+                capacity *= 2
+                particles_pos.resize(capacity, 2, refcheck=False)
+                particles_pos[particles_count:] = np.nan
+                print(f"Resized particles array to {capacity} capacity.")  # DEBUG
+            physics_paused = True
+        else:
+            physics_paused = False
+
+
+        if not physics_paused:
+            dt = clock.get_time() / 1000.0
+            for i in range(particles_count):
+                px, py = particles_pos[i]
+                mass = particles_mass[i]
+                force = qtree.compute_forces(px, py, mass, g=20.0)
+                particles_acc[i] = force / mass
+                particles_vel[i] += particles_acc[i] * dt
+                particles_pos[i] += particles_vel[i] * dt
 
         SURFACE.fill(WHITE)
         draw_quadtree(SURFACE, qtree)
-        draw_particles(SURFACE, qtree)
+        draw_particles(SURFACE, particles_pos, particles_count)
         draw_fps(SURFACE, clock.get_fps())
         draw_counters(SURFACE, particles_count, qtree)
         pygame.display.update()
