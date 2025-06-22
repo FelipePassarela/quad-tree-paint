@@ -101,8 +101,8 @@ def main():
             for i in range(particles_count):
                 px, py = particles_pos[i]
                 mass = particles_mass[i]
-                force = qtree.compute_forces(px, py, mass, g=20.0)
-                
+                force = qtree.compute_forces(px, py, mass, g=20.0, theta=0.5, eps=1e-1)
+
                 particles_acc[i] = force / mass
                 particles_vel[i] += particles_acc[i] * dt
                 particles_pos[i] += particles_vel[i] * dt
