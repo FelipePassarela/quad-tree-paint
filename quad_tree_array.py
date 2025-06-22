@@ -85,6 +85,34 @@ class QuadTree:
         if insert_success:
             self._update_cm(current_idx)
         return insert_success
+    
+    def compute_forces(self, px, py, mass, g=1.0, theta=0.5):
+        fx, fy = 0.0, 0.0
+        stack = [0]
+
+        while stack:
+            node_idx = stack.pop()
+
+            if np.isnan(self.cm_x[node_idx]) or self.masses[node_idx] == 0.0:
+                continue
+            if self.is_leaf[node_idx] and px == self.px[node_idx] and py == self.py[node_idx]:
+                # Skip the particle itself
+                continue
+
+            dx = self.cm_x[node_idx] - px
+            dy = self.cm_y[node_idx] - py
+            dist_sq = dx * dx + dy * dy + 1e-1
+            dist = np.sqrt(dist_sq)
+            s = self.w[node_idx]
+
+            if self.is_leaf[node_idx] or (s / dist) < theta:
+                force_mag = g * mass * self.masses[node_idx] / (dist_sq * dist)
+                fx += force_mag * dx
+                fy += force_mag * dy
+            else:
+                stack.extend(child_idx for child_idx in self.children_idx[node_idx] if child_idx != -1)
+
+        return np.array([fx, fy], dtype=np.float32)
 
     def _insert_particle(self, px, py, mass, node_idx):
         self.px[node_idx] = px
@@ -168,7 +196,8 @@ class QuadTree:
 
         for attr, value in self.invalid_values.items():
             array = getattr(self, attr)
-            array.resize(new_capacity, refcheck=False)
+            new_shape = (new_capacity,) + array.shape[1:] if array.ndim > 1 else (new_capacity,)
+            array.resize(new_shape, refcheck=False)
             array[self.capacity:] = value
 
         self.capacity = new_capacity
