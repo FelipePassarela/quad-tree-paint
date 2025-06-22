@@ -1,10 +1,13 @@
 class Node:
+    __slots__ = ['x', 'y', 'w', 'h', 'children_idx', 'is_leaf', 'px', 'py']
+
     def __init__(self, x, y, width, height):
         self.x, self.y = x, y
         self.w, self.h = width, height
+        self.px, self.py = None, None
+        
         self.children_idx = [None]
         self.is_leaf = True
-        self.px, self.py = None, None
 
 
 class QuadTree:
@@ -45,7 +48,8 @@ class QuadTree:
                 child.px, child.py = old_px, old_py
 
             # The loop continues to find the correct quadrant for the new particle.
-            # current_idx does not change, so the next iteration will start from the current node.
+            # current_idx does not change, so the next iteration will start from the current node,
+            # which is now no longer a leaf.
 
     def _find_quadrant(self, px, py, node):
         mid_x = node.x + node.w // 2
