@@ -4,7 +4,7 @@ import pygame
 from quad_tree_array import QuadTree
 
 WHITE = (245, 233, 223)
-BLACK = (0, 0, 0)
+BLACK = (107, 85, 66)
 GRAY = (207, 188, 180)
 RED = (245, 67, 40)
 
@@ -56,7 +56,7 @@ def main():
                     running = False
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_SPACE] or pygame.mouse.get_pressed()[0]:
             px, py = pygame.mouse.get_pos()
             qtree.insert(px, py)
 
