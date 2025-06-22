@@ -7,13 +7,20 @@ WHITE = (245, 233, 223)
 BLACK = (107, 85, 66)
 GRAY = (207, 188, 180)
 RED = (245, 67, 40)
+BLUE = (99, 105, 205)
 FONT_SIZE = 20
 
 def draw_quadtree(surface, qt):
     for i in range(len(qt)):
-        x, y = qt.x[i], qt.y[i]
-        w, h = qt.w[i], qt.h[i]
-        pygame.draw.rect(surface, GRAY, (int(x), int(y), int(w), int(h)), 1)
+        x, y = int(qt.x[i]), int(qt.y[i])
+        w, h = int(qt.w[i]), int(qt.h[i])
+        pygame.draw.rect(surface, GRAY, (x, y, w, h), 1)
+
+    if np.isnan(qt.cm_x[0]):
+        return
+    root_cm = int(qt.cm_x[0]), int(qt.cm_y[0])
+    pygame.draw.line(surface, BLUE, (root_cm[0] - 4, root_cm[1]), (root_cm[0] + 4, root_cm[1]), 2)
+    pygame.draw.line(surface, BLUE, (root_cm[0], root_cm[1] - 4), (root_cm[0], root_cm[1] + 4), 2)
 
 
 def draw_particles(surface, qt):
@@ -56,9 +63,6 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONUP:
-                px, py = event.pos
-                particles_count += qtree.insert(px, py)
             if event.type  == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     qtree.clear()
@@ -69,7 +73,7 @@ def main():
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] or pygame.mouse.get_pressed()[0]:
             px, py = pygame.mouse.get_pos()
-            particles_count += qtree.insert(px, py)
+            particles_count += qtree.insert(px, py, 1.0)
 
         SURFACE.fill(WHITE)
         draw_quadtree(SURFACE, qtree)

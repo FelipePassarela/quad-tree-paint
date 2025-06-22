@@ -14,6 +14,10 @@ class QuadTree:
         self.py = np.full(self.capacity, np.nan, dtype=np.float32)
         self.eps = 1e-2 * np.sqrt(width**2 + height**2)  # Epsilon for avoiding deep recursion
 
+        self.masses = np.zeros(self.capacity, dtype=np.float32)
+        self.cm_x = np.full(self.capacity, np.nan, dtype=np.float32)
+        self.cm_y = np.full(self.capacity, np.nan, dtype=np.float32)
+
         self.is_leaf = np.zeros(self.capacity, dtype=bool)
         self.children_idx = -np.ones((self.capacity, 4), dtype=np.int32)
 
@@ -25,7 +29,8 @@ class QuadTree:
         self.h[0] = height
         self.is_leaf[0] = True
     
-    def insert(self, px, py):
+    def insert(self, px, py, mass):
+        insert_success = False
         current_idx = 0  # Root
 
         while True:
@@ -38,27 +43,54 @@ class QuadTree:
             if is_empty:
                 self.px[current_idx] = px
                 self.py[current_idx] = py
-                return True
+                self.cm_x[current_idx] = px
+                self.cm_y[current_idx] = py
+                self.masses[current_idx] = mass
+                insert_success = True
+                break
             
             # Avoid deep recursion by checking if the particle is close enough
             dist_sqr = (self.px[current_idx] - px) ** 2 + (self.py[current_idx] - py) ** 2
             if dist_sqr < self.eps:
-                return False
+                insert_success = False
+                break
 
             self._subdivide(current_idx)
-
-            # Insert old particle in properly quadrant
-            old_px, old_py = self.px[current_idx], self.py[current_idx]
-            self.px[current_idx], self.py[current_idx] = np.nan, np.nan
-
-            quadrant_idx = self._find_quadrant(old_px, old_py, current_idx)
-            child_idx = self.children_idx[current_idx, quadrant_idx]
-            self.px[child_idx] = old_px
-            self.py[child_idx] = old_py
 
             # The loop continues to find the correct quadrant for the new particle.
             # current_idx does not change, so the next iteration will start from the current node,
             # which is now no longer a leaf.
+
+        if insert_success:
+            # WARNING: Critical performance issue: O(n) mass update on every insertion.
+            # Calling update_masses() after every particle insertion results in O(n*m) 
+            # total complexity for inserting m particles into a tree with n nodes. 
+            # This will severely impact performance for large numbers of particles.
+            self.update_masses()
+        return insert_success
+
+    def update_masses(self):
+        for i in reversed(range(self.count)):
+            if self.is_leaf[i]:
+                continue
+            
+            total_mass = 0.0
+            weighted_x = 0.0
+            weighted_y = 0.0
+
+            for child_idx in self.children_idx[i]:
+                if child_idx == -1 or np.isnan(self.cm_x[child_idx]):
+                    continue
+                total_mass += self.masses[child_idx]
+                weighted_x += self.cm_x[child_idx] * self.masses[child_idx]
+                weighted_y += self.cm_y[child_idx] * self.masses[child_idx]
+            
+            if total_mass == 0.0:  # Preserve NaN if no mass
+                continue
+
+            self.cm_x[i] = weighted_x / total_mass
+            self.cm_y[i] = weighted_y / total_mass
+            self.masses[i] = total_mass
 
     def _find_quadrant(self, px, py, node_idx):
         mid_x = self.x[node_idx] + self.w[node_idx] / 2
@@ -89,6 +121,26 @@ class QuadTree:
         self.h[new_indices] = half_h
         self.is_leaf[new_indices] = True
 
+        # Insert old particle in properly child
+        old_px = self.px[node_idx]
+        old_py = self.py[node_idx]
+        old_mass = self.masses[node_idx]
+
+        self.px[node_idx] = np.nan
+        self.py[node_idx] = np.nan
+        self.cm_x[node_idx] = np.nan
+        self.cm_y[node_idx] = np.nan
+        self.masses[node_idx] = 0.0
+
+        quadrant_idx = self._find_quadrant(old_px, old_py, node_idx)
+        child_idx = self.children_idx[node_idx, quadrant_idx]
+        
+        self.px[child_idx] = old_px
+        self.py[child_idx] = old_py
+        self.cm_x[child_idx] = old_px
+        self.cm_y[child_idx] = old_py
+        self.masses[child_idx] = old_mass
+
         self.count += 4
 
     def _resize(self):
@@ -108,6 +160,13 @@ class QuadTree:
         self.px[self.capacity:] = np.nan
         self.py[self.capacity:] = np.nan
 
+        self.masses.resize(new_capacity, refcheck=False)
+        self.cm_x.resize(new_capacity, refcheck=False)
+        self.cm_y.resize(new_capacity, refcheck=False)
+        self.masses[self.capacity:] = 0.0
+        self.cm_x[self.capacity:] = np.nan
+        self.cm_y[self.capacity:] = np.nan
+        
         self.is_leaf.resize(new_capacity, refcheck=False)
         self.is_leaf[self.capacity:] = False
 
@@ -128,6 +187,9 @@ class QuadTree:
 
         self.px.fill(np.nan)
         self.py.fill(np.nan)
+        self.cm_x.fill(np.nan)
+        self.cm_y.fill(np.nan)
+        self.masses.fill(0.0)
 
         self.is_leaf.fill(False)
         self.children_idx.fill(-1)
