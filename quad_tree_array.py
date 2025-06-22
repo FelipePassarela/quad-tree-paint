@@ -74,7 +74,7 @@ class QuadTree:
         if self.count + 4 > self.capacity:
             self._resize()
 
-        self.children_idx[node_idx] = list(range(self.count, self.count + 4))
+        self.children_idx[node_idx] = np.arange(self.count, self.count + 4, dtype=np.int32)
         self.is_leaf[node_idx] = False
 
         x, y = self.x[node_idx], self.y[node_idx]
