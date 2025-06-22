@@ -3,10 +3,6 @@ import pygame
 
 from quad_tree_array import QuadTree
 
-WIDTH, HEIGHT = 800, 600
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Visualizador de QuadTree")
-
 WHITE = (245, 233, 223)
 BLACK = (0, 0, 0)
 GRAY = (207, 188, 180)
@@ -27,17 +23,29 @@ def draw_particles(surface, qt):
             pygame.draw.circle(surface, RED, (int(px), int(py)), 3)
 
 
+def draw_fps(surface, fps):
+    font = pygame.font.SysFont("Arial", 24)
+    fps_text = font.render(f"FPS: {int(fps)}", True, BLACK)
+    surface.blit(fps_text, (10, 10))
+
+
 def main():
-    run = True
+    WIDTH, HEIGHT = 800, 600
+    SURFACE = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Visualizador de QuadTree")
+    pygame.font.init()
+    
+    running = True
     clock = pygame.time.Clock()
 
     qtree = QuadTree(0, 0, WIDTH, HEIGHT)
 
-    while run:
-        clock.tick(20)
+    while running:
+        clock.tick(60)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                running = False
             if event.type == pygame.MOUSEBUTTONUP:
                 px, py = event.pos
                 qtree.insert(px, py)
@@ -45,15 +53,17 @@ def main():
                 if event.key == pygame.K_r:
                     qtree = QuadTree(0, 0, WIDTH, HEIGHT)
                 if event.key == pygame.K_ESCAPE:
-                    run = False
+                    running = False
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE]:
             px, py = pygame.mouse.get_pos()
             qtree.insert(px, py)
 
-        WIN.fill(WHITE)
-        draw_quadtree(WIN, qtree)
-        draw_particles(WIN, qtree)
+        SURFACE.fill(WHITE)
+        draw_quadtree(SURFACE, qtree)
+        draw_particles(SURFACE, qtree)
+        draw_fps(SURFACE, clock.get_fps())
         pygame.display.update()
 
     pygame.quit()
