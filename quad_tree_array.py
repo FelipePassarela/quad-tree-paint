@@ -20,6 +20,7 @@ class QuadTree:
 
         self.is_leaf = np.zeros(self.capacity, dtype=bool)
         self.children_idx = -np.ones((self.capacity, 4), dtype=np.int32)
+        self.parent_idx = np.full(self.capacity, -1, dtype=np.int32)
 
         # Initialize the root node
         self.count = 1
@@ -62,35 +63,34 @@ class QuadTree:
             # which is now no longer a leaf.
 
         if insert_success:
-            # WARNING: Critical performance issue: O(n) mass update on every insertion.
-            # Calling update_masses() after every particle insertion results in O(n*m) 
-            # total complexity for inserting m particles into a tree with n nodes. 
-            # This will severely impact performance for large numbers of particles.
-            self.update_masses()
+            self._update_cm(current_idx)
         return insert_success
 
-    def update_masses(self):
-        for i in reversed(range(self.count)):
-            if self.is_leaf[i]:
-                continue
-            
+
+    def _update_cm(self, leaf_idx):
+        current = leaf_idx
+        while True:
+            parent = self.parent_idx[current]
+            if parent == -1:
+                break
+
             total_mass = 0.0
             weighted_x = 0.0
             weighted_y = 0.0
 
-            for child_idx in self.children_idx[i]:
+            for child_idx in self.children_idx[parent]:
                 if child_idx == -1 or np.isnan(self.cm_x[child_idx]):
                     continue
                 total_mass += self.masses[child_idx]
                 weighted_x += self.cm_x[child_idx] * self.masses[child_idx]
                 weighted_y += self.cm_y[child_idx] * self.masses[child_idx]
-            
-            if total_mass == 0.0:  # Preserve NaN if no mass
-                continue
 
-            self.cm_x[i] = weighted_x / total_mass
-            self.cm_y[i] = weighted_y / total_mass
-            self.masses[i] = total_mass
+            if total_mass > 0.0:  # Preserve default values if no mass is present
+                self.cm_x[parent] = weighted_x / total_mass
+                self.cm_y[parent] = weighted_y / total_mass
+                self.masses[parent] = total_mass
+
+            current = parent
 
     def _find_quadrant(self, px, py, node_idx):
         mid_x = self.x[node_idx] + self.w[node_idx] / 2
@@ -120,6 +120,7 @@ class QuadTree:
         self.w[new_indices] = half_w
         self.h[new_indices] = half_h
         self.is_leaf[new_indices] = True
+        self.parent_idx[new_indices] = node_idx
 
         # Insert old particle in properly child
         old_px = self.px[node_idx]
@@ -171,7 +172,9 @@ class QuadTree:
         self.is_leaf[self.capacity:] = False
 
         self.children_idx.resize((new_capacity, 4), refcheck=False)
+        self.parent_idx.resize(new_capacity, refcheck=False)
         self.children_idx[self.capacity:] = -1
+        self.parent_idx[self.capacity:] = -1
 
         self.capacity = new_capacity
         print(f"QuadTree resized to {self.capacity} nodes.")  # DEBUG
@@ -193,6 +196,7 @@ class QuadTree:
 
         self.is_leaf.fill(False)
         self.children_idx.fill(-1)
+        self.parent_idx.fill(-1)
 
         # Reset the root node
         self.count = 1
