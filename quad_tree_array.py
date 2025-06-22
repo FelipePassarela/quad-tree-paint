@@ -14,35 +14,30 @@ class QuadTree:
     def insert(self, px, py):
         current_idx = 0  # Root
 
-        stack = [(current_idx, px, py)]
-        while len(stack) > 0:
-            current_idx, px, py = stack.pop()
+        while True:
+            if not self.nodes[current_idx].is_leaf:
+                quadrant_idx = self._find_quadrant(px, py, current_idx)
+                current_idx = self.nodes[current_idx].children_idx[quadrant_idx]
+                continue
 
             is_empty = (self.nodes[current_idx].px == None)
             if is_empty:
                 self.nodes[current_idx].px = px
                 self.nodes[current_idx].py = py
-
-            if not self.nodes[current_idx].is_leaf:
-                target_idx = self._find_quadrant(px, py, current_idx)
-                child_idx = self.nodes[current_idx].children_idx[target_idx]
-                stack.append((child_idx, px, py))
-
-            if self.nodes[current_idx].is_leaf and not is_empty:
+                break
+            else:
                 self._subdivide(current_idx)
 
-                # Insert self particle in properly quadrant
-                self_px = self.nodes[current_idx].px
-                self_py = self.nodes[current_idx].py
+                # Insert old particle in properly quadrant
+                old_px = self.nodes[current_idx].px
+                old_py = self.nodes[current_idx].py
+                self.nodes[current_idx].px = None
+                self.nodes[current_idx].py = None
 
-                target_idx = self._find_quadrant(self_px, self_py, current_idx)
-                child_idx = self.nodes[current_idx].children_idx[target_idx]
-                stack .append((child_idx, self_px, self_py))
-
-                # Insert new particle in properly quadrant
-                target_idx = self._find_quadrant(px, py, current_idx)
-                child_idx = self.nodes[current_idx].children_idx[target_idx]
-                stack.append((child_idx, px, py))
+                quadrant_idx = self._find_quadrant(old_px, old_py, current_idx)
+                child_idx = self.nodes[current_idx].children_idx[quadrant_idx]
+                self.nodes[child_idx].px = old_px
+                self.nodes[child_idx].py = old_py
 
     def _find_quadrant(self, px, py, node_idx):
         mid_x = self.nodes[node_idx].x + self.nodes[node_idx].w // 2
