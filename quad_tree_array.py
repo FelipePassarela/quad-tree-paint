@@ -28,7 +28,7 @@ class QuadTree:
                 node.py = py
                 break
             else:
-                # Avoid deep recursion by checking if the particle is already in the node
+                # Avoid deep recursion by checking if the particle is close enough
                 dist_sqr = (node.px - px) ** 2 + (node.py - py) ** 2
                 if dist_sqr < 1e-6:
                     break
@@ -43,6 +43,9 @@ class QuadTree:
                 child_idx = node.children_idx[quadrant_idx]
                 child = self.nodes[child_idx]
                 child.px, child.py = old_px, old_py
+
+            # The loop continues to find the correct quadrant for the new particle.
+            # current_idx does not change, so the next iteration will start from the current node.
 
     def _find_quadrant(self, px, py, node):
         mid_x = node.x + node.w // 2
