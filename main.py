@@ -12,14 +12,18 @@ GRAY = (200, 200, 200)
 RED = (255, 0, 0)
 
 def draw_quadtree(surface, qt):
-    for node in qt.nodes:
-        pygame.draw.rect(surface, GRAY, (node.x, node.y, node.w, node.h), 1)
+    for i in range(len(qt.x)):
+        x, y = qt.x[i], qt.y[i]
+        w, h = qt.w[i], qt.h[i]
+        pygame.draw.rect(surface, GRAY, (x, y, w, h), 1)
 
 
 def draw_particles(surface, qt):
-    for node in qt.nodes:
-        if node.is_leaf and node.px is not None:
-            pygame.draw.circle(surface, RED, (int(node.px), int(node.py)), 3)
+    for i in range(len(qt.px)):
+        px, py = qt.px[i], qt.py[i]
+        is_leaf = qt.is_leaf[i]
+        if is_leaf and px is not None:
+            pygame.draw.circle(surface, RED, (px, py), 3)
 
 
 def main():
