@@ -61,8 +61,8 @@ class QuadTree:
             # which is now no longer a leaf.
 
     def _find_quadrant(self, px, py, node_idx):
-        mid_x = self.x[node_idx] + self.w[node_idx] // 2
-        mid_y = self.y[node_idx] + self.h[node_idx] // 2
+        mid_x = self.x[node_idx] + self.w[node_idx] / 2
+        mid_y = self.y[node_idx] + self.h[node_idx] / 2
 
         if px < mid_x:
             target_idx = 0 if py < mid_y else 2
@@ -78,15 +78,15 @@ class QuadTree:
         self.is_leaf[node_idx] = False
 
         x, y = self.x[node_idx], self.y[node_idx]
-        half_w = self.w[node_idx] // 2
-        half_h = self.h[node_idx] // 2
+        half_w = self.w[node_idx] / 2
+        half_h = self.h[node_idx] / 2
 
         # Append new nodes for the four quadrants
         new_indices = slice(self.count, self.count + 4)
         self.x[new_indices] = [x, x + half_w, x, x + half_w]
         self.y[new_indices] = [y, y, y + half_h, y + half_h]
-        self.w[new_indices] = [half_w, half_w, half_w, half_w]
-        self.h[new_indices] = [half_h, half_h, half_h, half_h]
+        self.w[new_indices] = half_w
+        self.h[new_indices] = half_h
         self.px[new_indices] = np.nan
         self.py[new_indices] = np.nan
         self.is_leaf[new_indices] = True
@@ -115,4 +115,15 @@ class QuadTree:
 
         self.capacity = new_capacity
         print(f"QuadTree resized to {self.capacity} nodes.")  # DEBUG
+
+    def clear(self):
+        self.count = 1
+        self.is_leaf[0] = True
+        self.children_idx[0] = -1
+        self.px[0] = np.nan
+        self.py[0] = np.nan
+
+    def __len__(self):
+        return self.count
+    
 

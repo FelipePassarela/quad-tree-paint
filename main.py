@@ -51,7 +51,7 @@ def main():
                 qtree.insert(px, py)
             if event.type  == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
-                    qtree = QuadTree(0, 0, WIDTH, HEIGHT)
+                    qtree.clear()
                 if event.key == pygame.K_ESCAPE:
                     running = False
 
