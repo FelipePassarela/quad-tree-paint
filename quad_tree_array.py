@@ -38,12 +38,12 @@ class QuadTree:
             if is_empty:
                 self.px[current_idx] = px
                 self.py[current_idx] = py
-                break
+                return True
             
             # Avoid deep recursion by checking if the particle is close enough
             dist_sqr = (self.px[current_idx] - px) ** 2 + (self.py[current_idx] - py) ** 2
             if dist_sqr < self.eps:
-                break
+                return False
 
             self._subdivide(current_idx)
 
