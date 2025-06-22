@@ -96,16 +96,20 @@ def main():
         else:
             physics_paused = False
 
-
         if not physics_paused:
             dt = clock.get_time() / 1000.0
             for i in range(particles_count):
                 px, py = particles_pos[i]
                 mass = particles_mass[i]
                 force = qtree.compute_forces(px, py, mass, g=20.0)
+                
                 particles_acc[i] = force / mass
                 particles_vel[i] += particles_acc[i] * dt
                 particles_pos[i] += particles_vel[i] * dt
+
+                if particles_pos[i, 0] < 0 or particles_pos[i, 0] >= WIDTH or \
+                   particles_pos[i, 1] < 0 or particles_pos[i, 1] >= HEIGHT:
+                    particles_vel[i] *= -1
 
         SURFACE.fill(WHITE)
         draw_quadtree(SURFACE, qtree)
