@@ -28,6 +28,11 @@ class QuadTree:
                 current_node.py = py
                 break
             else:
+                # Avoid deep recursion by checking if the particle is already in the node
+                dist_sqr = (current_node.px - px) ** 2 + (current_node.py - py) ** 2
+                if dist_sqr < 1e-6:
+                    break
+
                 self._subdivide(current_idx)
 
                 # Insert old particle in properly quadrant
